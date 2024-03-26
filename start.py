@@ -5,6 +5,7 @@ import pyaudio
 import wave
 import pyttsx3
 import random
+import json
 
 # 百度语音识别API的URL
 API_URL = "https://vop.baidu.com/pro_api"
@@ -99,27 +100,45 @@ def generate_wish():
     ]
     return random.choice(wishes)
 
+# 从JSON文件中读取输入内容和输出内容
+def load_conversation(filename):
+    with open(filename, "r", encoding="utf-8") as file:
+        data = json.load(file)
+    return data
+
+# 语音识别函数
+def recognize_input(audio_data):
+    print("正在识别...")
+    recognized_text = baidu_speech_recognition(audio_data)
+    return recognized_text
+
+# 生成回复函数
+def generate_response(recognized_text, conversation_data):
+    inputs = conversation_data.get("inputs", {})
+    default_response = conversation_data.get("default_response", "抱歉，我不明白你的意思")
+    
+    for key, value in inputs.items():
+        if key in recognized_text:
+            return value
+    return default_response
+
 # 主函数
 def main():
     try:
+        conversation_data = load_conversation("conversation.json")
         while True:
             print("录音开始...")
             audio_data = record_audio()
-            print("正在识别...")
-            recognized_text = baidu_speech_recognition(audio_data)
-            if recognized_text == "你好":
-                response = "你也好"
-            elif recognized_text == "再见":
-                response = "88"
-                print("机器人：" + response)
-                text_to_speech(response)
+            recognized_text = recognize_input(audio_data)
+            if any(keyword in recognized_text for keyword in ["退出", "关闭"]) and len(recognized_text) < 5:
+                print("退出程序")
                 break
-            else:
-                response = generate_wish()
+            response = generate_response(recognized_text, conversation_data)
             print("机器人：" + response)
             text_to_speech(response)
     except Exception as e:
         print("发生错误：", e)
 
+# 调用主函数
 if __name__ == "__main__":
     main()
