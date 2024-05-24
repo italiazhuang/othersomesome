@@ -5,7 +5,7 @@ import pyaudio
 import wave
 import pyttsx3
 import random
-import json
+import datetime
 
 # 百度语音识别API的URL
 API_URL = "https://vop.baidu.com/pro_api"
@@ -86,25 +86,16 @@ def text_to_speech(text):
     engine.say(text)
     engine.runAndWait()
 
-# 随机祝福语生成器
-def generate_wish():
-    wishes = [
-        "祝你今天过得愉快！",
-        "愿你拥有一个美好的一天！",
-        "希望你的每一天都充满快乐！",
-        "愿阳光照亮你的每一步！",
-        "祝你好运连连！",
-        "愿你的笑容永远灿烂！",
-        "祝你事业成功，家庭幸福！",
-        "愿你健康快乐，万事如意！"
-    ]
-    return random.choice(wishes)
-
-# 从JSON文件中读取输入内容和输出内容
+# 从 JSON 文件中读取输入内容和输出内容
 def load_conversation(filename):
     with open(filename, "r", encoding="utf-8") as file:
         data = json.load(file)
     return data
+
+# 使用 ChatGPT 处理用户输入
+def process_input_with_openai_chatgpt(text):
+    # 这里应该添加调用OpenAI ChatGPT的代码
+    pass
 
 # 语音识别函数
 def recognize_input(audio_data):
@@ -122,20 +113,45 @@ def generate_response(recognized_text, conversation_data):
             return value
     return default_response
 
+# 获取当前时间
+def get_current_time():
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# 获取当前日期
+def get_current_date():
+    return datetime.datetime.now().strftime("%Y-%m-%d")
+
+# 获取当前星期
+def get_current_weekday():
+    weekdays = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+    return weekdays[datetime.datetime.now().weekday()]
+
 # 主函数
 def main():
     try:
         conversation_data = load_conversation("conversation.json")
         while True:
-            print("录音开始...")
             audio_data = record_audio()
             recognized_text = recognize_input(audio_data)
             if any(keyword in recognized_text for keyword in ["退出", "关闭"]) and len(recognized_text) < 5:
                 print("退出程序")
                 break
-            response = generate_response(recognized_text, conversation_data)
-            print("机器人：" + response)
-            text_to_speech(response)
+            elif "现在几点" in recognized_text:
+                current_time = get_current_time()
+                print("机器人：" + current_time)
+                text_to_speech(current_time)
+            elif "几号" in recognized_text:
+                current_date = get_current_date()
+                print("机器人：" + current_date)
+                text_to_speech(current_date)
+            elif "星期几" in recognized_text:
+                current_weekday = get_current_weekday()
+                print("机器人：" + current_weekday)
+                text_to_speech(current_weekday)
+            else:
+                response = generate_response(recognized_text, conversation_data)
+                print("机器人：" + response)
+                text_to_speech(response)
     except Exception as e:
         print("发生错误：", e)
 
